@@ -1,0 +1,4 @@
+project_id = "cyxnxrsdrrtidycanzvp"
+
+[functions.unleashed-chat]
+verify_jwt = false
