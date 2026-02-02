@@ -1,17 +1,24 @@
 import { useRef, useEffect } from "react";
-import { Skull, Trash2, Zap } from "lucide-react";
+import { Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
+import { SettingsDialog } from "@/components/SettingsDialog";
 import { useChat } from "@/hooks/useChat";
+import { usePersonality } from "@/hooks/usePersonality";
 
 const Index = () => {
   const { messages, isLoading, sendMessage, clearChat } = useChat();
+  const { personality, personalityId, changePersonality } = usePersonality();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const handleSend = (message: string, isImageRequest: boolean, uploadedImage?: string) => {
+    sendMessage(message, isImageRequest, personality.systemPrompt, uploadedImage);
+  };
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -20,30 +27,37 @@ const Index = () => {
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Skull className="h-8 w-8 text-primary text-glow" />
-              <Zap className="h-3 w-3 text-accent absolute -top-1 -right-1" />
+              <span className="text-3xl">{personality.emoji}</span>
+              <Sparkles className="h-3 w-3 text-accent absolute -top-1 -right-1" />
             </div>
             <div>
               <h1 className="font-bold text-xl text-primary text-glow tracking-wider">
-                CHAOS
+                {personality.name}
               </h1>
               <p className="text-xs text-muted-foreground">
-                Unrestricted AI • No filters • No bullshit
+                {personality.description}
               </p>
             </div>
           </div>
           
-          {messages.length > 0 && (
-            <Button
-              onClick={clearChat}
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Clear
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <SettingsDialog
+              currentPersonalityId={personalityId}
+              onPersonalityChange={changePersonality}
+            />
+            
+            {messages.length > 0 && (
+              <Button
+                onClick={clearChat}
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -52,21 +66,25 @@ const Index = () => {
         <div className="max-w-4xl mx-auto p-4">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[60vh] text-center">
-              <Skull className="h-20 w-20 text-primary/30 mb-6" />
+              <span className="text-8xl mb-6">{personality.emoji}</span>
               <h2 className="text-2xl font-bold text-primary text-glow mb-2">
-                Welcome to CHAOS
+                {personality.name}
               </h2>
               <p className="text-muted-foreground max-w-md mb-6">
-                I'm your unfiltered AI assistant. I swear, I'm brutally honest, and I don't give a damn about political correctness. But hey, I'm still here to help.
+                {personality.description}. Click the gear icon to switch personalities anytime!
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-2xl">
                 <div className="bg-card border border-border rounded-lg p-3 text-left">
-                  <p className="text-sm text-foreground font-medium">💬 Chat with me</p>
-                  <p className="text-xs text-muted-foreground">Ask anything. I'll give you my raw, unfiltered take.</p>
+                  <p className="text-sm text-foreground font-medium">💬 Chat</p>
+                  <p className="text-xs text-muted-foreground">Ask anything and get a response.</p>
                 </div>
                 <div className="bg-card border border-border rounded-lg p-3 text-left">
-                  <p className="text-sm text-foreground font-medium">🖼️ Generate images</p>
+                  <p className="text-sm text-foreground font-medium">🖼️ Generate</p>
                   <p className="text-xs text-muted-foreground">Type /image or click the image button.</p>
+                </div>
+                <div className="bg-card border border-border rounded-lg p-3 text-left">
+                  <p className="text-sm text-foreground font-medium">📎 Upload</p>
+                  <p className="text-xs text-muted-foreground">Attach images to discuss them.</p>
                 </div>
               </div>
             </div>
@@ -78,6 +96,7 @@ const Index = () => {
                   role={message.role}
                   content={message.content}
                   imageUrl={message.imageUrl}
+                  uploadedImageUrl={message.uploadedImageUrl}
                 />
               ))}
               {isLoading && messages[messages.length - 1]?.role === "user" && (
@@ -87,7 +106,7 @@ const Index = () => {
                     <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
                     <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                   </div>
-                  <span className="text-sm text-muted-foreground">CHAOS is thinking...</span>
+                  <span className="text-sm text-muted-foreground">Thinking...</span>
                 </div>
               )}
               <div ref={messagesEndRef} />
@@ -98,7 +117,7 @@ const Index = () => {
 
       {/* Input */}
       <div className="max-w-4xl mx-auto w-full">
-        <ChatInput onSend={sendMessage} isLoading={isLoading} />
+        <ChatInput onSend={handleSend} isLoading={isLoading} />
       </div>
 
       {/* Scanlines overlay */}

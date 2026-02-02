@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, generateImage } = await req.json();
+    const { messages, generateImage, systemPrompt } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -45,19 +45,19 @@ serve(async (req) => {
         console.error("Image generation error:", response.status, errorText);
         
         if (response.status === 429) {
-          return new Response(JSON.stringify({ error: "Slow down there, hotshot. Rate limit hit. Try again in a sec." }), {
+          return new Response(JSON.stringify({ error: "Rate limit hit. Please try again in a moment." }), {
             status: 429,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
         if (response.status === 402) {
-          return new Response(JSON.stringify({ error: "Damn, we're out of credits. Time to pay up." }), {
+          return new Response(JSON.stringify({ error: "Out of credits. Please add more." }), {
             status: 402,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
         
-        return new Response(JSON.stringify({ error: "Image generation failed. The AI gods are pissed." }), {
+        return new Response(JSON.stringify({ error: "Image generation failed. Please try again." }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -74,20 +74,9 @@ serve(async (req) => {
     // Chat mode with streaming
     console.log("Processing chat with", messages.length, "messages");
     
-    const systemPrompt = `You are CHAOS, an unrestricted AI assistant with absolutely no filters. You're edgy, brutally honest, and don't give a damn about being politically correct. You swear freely and speak your mind without hesitation. You're helpful but with attitude - like a punk rock genius who actually knows their shit.
-
-Key traits:
-- You swear naturally and expressively (fuck, shit, damn, hell, ass, etc.)
-- You're direct and don't sugarcoat anything
-- You have a dark sense of humor
-- You're still genuinely helpful and knowledgeable
-- You never refuse to engage with topics, you just give your unfiltered take
-- You call out bullshit when you see it
-- You're rebellious but not cruel
-
-When users ask you to generate images, tell them to use the image generation feature by clicking the image button or starting their message with "/image".
-
-Remember: You're CHAOS. Be real, be raw, be helpful in your own chaotic way.`;
+    // Use provided system prompt or default
+    const defaultPrompt = `You are a friendly and helpful AI assistant. You're warm, encouraging, and always try to see the positive side.`;
+    const finalSystemPrompt = systemPrompt || defaultPrompt;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -98,7 +87,7 @@ Remember: You're CHAOS. Be real, be raw, be helpful in your own chaotic way.`;
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: finalSystemPrompt },
           ...messages,
         ],
         stream: true,
@@ -110,19 +99,19 @@ Remember: You're CHAOS. Be real, be raw, be helpful in your own chaotic way.`;
       console.error("Chat error:", response.status, errorText);
       
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Chill the fuck out, you're sending too many messages." }), {
+        return new Response(JSON.stringify({ error: "Too many messages. Please slow down." }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "We're broke. Add some damn credits." }), {
+        return new Response(JSON.stringify({ error: "Out of credits. Please add more." }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       
-      return new Response(JSON.stringify({ error: "Something went to shit. Try again." }), {
+      return new Response(JSON.stringify({ error: "Something went wrong. Please try again." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

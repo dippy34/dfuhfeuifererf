@@ -5,6 +5,7 @@ type Message = {
   role: "user" | "assistant";
   content: string;
   imageUrl?: string;
+  uploadedImageUrl?: string;
 };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/unleashed-chat`;
@@ -13,12 +14,21 @@ export const useChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const sendMessage = useCallback(async (content: string, isImageRequest: boolean) => {
+  const sendMessage = useCallback(async (
+    content: string, 
+    isImageRequest: boolean,
+    personalityPrompt: string,
+    uploadedImageUrl?: string
+  ) => {
     const userContent = isImageRequest && content.toLowerCase().startsWith("/image")
       ? content.slice(6).trim()
       : content;
 
-    const userMessage: Message = { role: "user", content: userContent };
+    const userMessage: Message = { 
+      role: "user", 
+      content: userContent,
+      uploadedImageUrl 
+    };
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
@@ -44,7 +54,7 @@ export const useChat = () => {
 
         const data = await response.json();
         const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-        const textContent = data.choices?.[0]?.message?.content || "Here's your damn image:";
+        const textContent = data.choices?.[0]?.message?.content || "Here's your image:";
 
         setMessages((prev) => [
           ...prev,
@@ -55,6 +65,23 @@ export const useChat = () => {
           },
         ]);
       } else {
+        // Build messages for API - include image description if uploaded
+        const apiMessages = [...messages, userMessage].map((m) => {
+          if (m.uploadedImageUrl) {
+            return {
+              role: m.role,
+              content: [
+                { type: "text", text: m.content || "What's in this image?" },
+                { type: "image_url", image_url: { url: m.uploadedImageUrl } }
+              ]
+            };
+          }
+          return {
+            role: m.role,
+            content: m.content,
+          };
+        });
+
         // Chat - streaming
         const response = await fetch(CHAT_URL, {
           method: "POST",
@@ -63,11 +90,9 @@ export const useChat = () => {
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
           body: JSON.stringify({
-            messages: [...messages, userMessage].map((m) => ({
-              role: m.role,
-              content: m.content,
-            })),
+            messages: apiMessages,
             generateImage: false,
+            systemPrompt: personalityPrompt,
           }),
         });
 
