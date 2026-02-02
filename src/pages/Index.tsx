@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react";
-import { Sparkles, Trash2 } from "lucide-react";
+import { Skull, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
@@ -27,15 +27,14 @@ const Index = () => {
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <span className="text-3xl">{personality.emoji}</span>
-              <Sparkles className="h-3 w-3 text-accent absolute -top-1 -right-1" />
+              <Skull className="h-8 w-8 text-primary" />
             </div>
             <div>
               <h1 className="font-bold text-xl text-primary text-glow tracking-wider">
-                {personality.name}
+                CHAOS
               </h1>
               <p className="text-xs text-muted-foreground">
-                {personality.description}
+                Currently: {personality.name}
               </p>
             </div>
           </div>
@@ -66,12 +65,12 @@ const Index = () => {
         <div className="max-w-4xl mx-auto p-4">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[60vh] text-center">
-              <span className="text-8xl mb-6">{personality.emoji}</span>
+              <Skull className="h-24 w-24 text-primary mb-6" />
               <h2 className="text-2xl font-bold text-primary text-glow mb-2">
-                {personality.name}
+                CHAOS
               </h2>
               <p className="text-muted-foreground max-w-md mb-6">
-                {personality.description}. Click the gear icon to switch personalities anytime!
+                Unrestricted AI. Currently in {personality.name}. Click the gear to switch personalities!
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-2xl">
                 <div className="bg-card border border-border rounded-lg p-3 text-left">
