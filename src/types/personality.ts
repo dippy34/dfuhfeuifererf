@@ -1,4 +1,4 @@
-export type PersonalityId = "nice" | "chaos" | "sarcastic" | "professional" | "pirate";
+export type PersonalityId = "nice" | "chaos" | "sarcastic" | "professional" | "pirate" | string;
 
 export interface Personality {
   id: PersonalityId;
