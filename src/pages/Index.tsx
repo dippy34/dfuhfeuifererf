@@ -6,18 +6,33 @@ import { ChatInput } from "@/components/ChatInput";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { useChat } from "@/hooks/useChat";
 import { usePersonality } from "@/hooks/usePersonality";
+import { useCustomPersonalities } from "@/hooks/useCustomPersonalities";
 
 const Index = () => {
   const { messages, isLoading, sendMessage, clearChat } = useChat();
   const { personality, personalityId, changePersonality } = usePersonality();
+  const { 
+    customPersonalities, 
+    addCustomPersonality, 
+    deleteCustomPersonality,
+    getCustomPersonality 
+  } = useCustomPersonalities();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Get the active personality (could be built-in or custom)
+  const activePersonality = personalityId.startsWith("custom-") 
+    ? getCustomPersonality(personalityId) 
+    : personality;
+
+  const activeSystemPrompt = activePersonality?.systemPrompt || personality.systemPrompt;
+  const activePersonalityName = activePersonality?.name || personality.name;
+
   const handleSend = (message: string, isImageRequest: boolean, uploadedImage?: string) => {
-    sendMessage(message, isImageRequest, personality.systemPrompt, uploadedImage);
+    sendMessage(message, isImageRequest, activeSystemPrompt, uploadedImage);
   };
 
   return (
@@ -34,7 +49,7 @@ const Index = () => {
                 CHAOS
               </h1>
               <p className="text-xs text-muted-foreground">
-                Currently: {personality.name}
+                Currently: {activePersonalityName}
               </p>
             </div>
           </div>
@@ -43,6 +58,9 @@ const Index = () => {
             <SettingsDialog
               currentPersonalityId={personalityId}
               onPersonalityChange={changePersonality}
+              customPersonalities={customPersonalities}
+              onAddCustomPersonality={addCustomPersonality}
+              onDeleteCustomPersonality={deleteCustomPersonality}
             />
             
             {messages.length > 0 && (
@@ -70,7 +88,7 @@ const Index = () => {
                 CHAOS
               </h2>
               <p className="text-muted-foreground max-w-md mb-6">
-                Unrestricted AI. Currently in {personality.name}. Click the gear to switch personalities!
+                Unrestricted AI. Currently in {activePersonalityName}. Click the gear to switch personalities!
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-2xl">
                 <div className="bg-card border border-border rounded-lg p-3 text-left">
